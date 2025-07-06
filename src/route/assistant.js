@@ -1,6 +1,5 @@
 import express from "express";
 let router = express.Router();
-const { isAuthunticatedUser, authorizeRole } = require("../middlewares/auth");
 
 import {
   create,
@@ -11,12 +10,10 @@ import {
   getAllAssistantUnderDoctor,
 } from "../controllers/assistant";
 
-router.route("/create-new-assistant").post(isAuthunticatedUser, create);
-router.route("/get-all-assistant").get(isAuthunticatedUser, getAll);
-router.route("/remove-assistant").delete(isAuthunticatedUser, remove);
+router.route("/create-new-assistant").post(create);
+router.route("/get-all-assistant").get(getAll);
+router.route("/remove-assistant").delete(remove);
 router.route("/get-single-assistant").get(getSingle);
-router.route("/update-assistant").put(isAuthunticatedUser, update);
-router
-  .route("/get-assistant-under-doctor")
-  .get(isAuthunticatedUser, getAllAssistantUnderDoctor);
+router.route("/update-assistant").put(update);
+router.route("/get-assistant-under-doctor").get(getAllAssistantUnderDoctor);
 module.exports = router;

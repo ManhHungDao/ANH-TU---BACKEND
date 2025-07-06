@@ -1,6 +1,5 @@
 import express from "express";
 let router = express.Router();
-const { isAuthunticatedUser, authorizeRole } = require("../middlewares/auth");
 
 import { sendMail } from "../controllers/mail";
 import {
@@ -17,10 +16,10 @@ import {
 
 router.route("/sent-mail-confirm-register").post(sendMail);
 router.route("/register").post(create);
-router.route("/get-infor-account").get(isAuthunticatedUser, getSingle);
-router.route("/update-infor-account").put(isAuthunticatedUser, update);
-router.route("/get-all-account-patient").get(isAuthunticatedUser, getAll);
-router.route("/delete-account-patient").delete(isAuthunticatedUser, remove);
+router.route("/get-infor-account").get(getSingle);
+router.route("/update-infor-account").put(update);
+router.route("/get-all-account-patient").get(getAll);
+router.route("/delete-account-patient").delete(remove);
 router.route("/check-email-existed").get(checkEmailExisted);
 
 // route update bulk data

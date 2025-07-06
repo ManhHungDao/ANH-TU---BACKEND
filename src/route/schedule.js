@@ -1,6 +1,5 @@
 import express from "express";
 let router = express.Router();
-const { isAuthunticatedUser, authorizeRole } = require("../middlewares/auth");
 
 import {
   createOrUpdate,
@@ -22,20 +21,20 @@ import {
 } from "../controllers/schedule";
 import { sendMail } from "../controllers/mail";
 
-router.route("/upsert-schedule").post(isAuthunticatedUser, createOrUpdate);
-router.route("/update-status-schedule").put(isAuthunticatedUser, updateStatus);
+router.route("/upsert-schedule").post(createOrUpdate);
+router.route("/update-status-schedule").put(updateStatus);
 router.route("/get-single-user-schedule").get(getSingleUser);
 router.route("/get-single-packet-schedule").get(getSinglePacket);
 router.route("/get-user-schedule").get(getUserScheduleByDate);
 router.route("/get-packet-schedule").get(getPacketScheduleByDate);
-router.route("/delete-schedule").delete(isAuthunticatedUser, remove);
-router.route("/sent-mail-patient").post(isAuthunticatedUser, sendMail);
+router.route("/delete-schedule").delete(remove);
+router.route("/sent-mail-patient").post(sendMail);
 router.route("/create-user-booking-schedule").put(createUserBooking);
 router.route("/patient-confirm-booking").put(patientUpdateStatus);
 router.route("/patient-feedback").put(patientUpdateFeeback);
 router.route("/check-patient-feedback").get(patientCheckAllowUpdateFeeback);
-router.route("/get-schedule-by-email").get(isAuthunticatedUser, gellAllByEmail);
-router.route("/get-detail-schedule").get(isAuthunticatedUser, getDetail);
+router.route("/get-schedule-by-email").get(gellAllByEmail);
+router.route("/get-detail-schedule").get(getDetail);
 router.route("/get-patient-comment-by-doctor").get(getPatientByDoctor);
 router.route("/get-patient-comment-by-packet").get(getPatientByPacket);
 
