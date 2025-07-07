@@ -5,16 +5,9 @@ const bodyParser = require("body-parser");
 const fileUpload = require("express-fileupload");
 
 // route
-const assistant = require("./route/assistant");
-const specialty = require("./route/specialty");
-const handbook = require("./route/handbook");
-const packet = require("./route/packet");
-const user = require("./route/user");
+
 const clinic = require("./route/clinic");
-const allcode = require("./route/allcode");
-const schedule = require("./route/schedule");
-const patient = require("./route/patient");
-const prescription = require("./route/prescription");
+
 require("dotenv").config();
 
 const ErrorMiddleware = require("./middlewares/errors");
@@ -41,18 +34,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(fileUpload());
 
-//import all routes
-
-app.use("/api", user);
 app.use("/api", clinic);
-app.use("/api", allcode);
-app.use("/api", specialty);
-app.use("/api", handbook);
-app.use("/api", schedule);
-app.use("/api", packet);
-app.use("/api", patient);
-app.use("/api", prescription);
-app.use("/api", assistant);
 
 //Middleware error handler
 app.use(ErrorMiddleware);
