@@ -4,9 +4,8 @@ const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
 const fileUpload = require("express-fileupload");
 
-// route
-
 const clinic = require("./route/clinic");
+const file = require("./route/file");
 
 require("dotenv").config();
 
@@ -35,6 +34,7 @@ app.use(cookieParser());
 app.use(fileUpload());
 
 app.use("/api", clinic);
+app.use("/api", file);
 
 //Middleware error handler
 app.use(ErrorMiddleware);
