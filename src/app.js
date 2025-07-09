@@ -2,10 +2,10 @@ const express = require("express");
 const app = express();
 const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
-const fileUpload = require("express-fileupload");
-
-const clinic = require("./route/clinic");
 const file = require("./route/file");
+const path = require("path");
+const multer = require("multer");
+const fs = require("fs");
 
 require("dotenv").config();
 
@@ -31,11 +31,19 @@ app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 app.use(express.json());
 app.use(cookieParser());
-app.use(fileUpload());
 
-app.use("/api", clinic);
+const UPLOAD_DIR = path.join(__dirname, "uploads");
+if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR);
+
+// Cấu hình Multer cho nhiều file
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
+  filename: (req, file, cb) => cb(null, file.originalname),
+});
+
 app.use("/api", file);
 
+const upload = multer({ storage });
 //Middleware error handler
 app.use(ErrorMiddleware);
 
