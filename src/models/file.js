@@ -1,19 +1,21 @@
 const mongoose = require("mongoose");
 
-const FileSchema = new mongoose.Schema({
-  filename: {
-    type: String,
-    required: true,
+const fileSchema = new mongoose.Schema(
+  {
+    filename: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    content: {
+      type: String,
+    },
+    type: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Type", // Liên kết với Model Type
+    },
   },
-  content: {
-    type: String, // Lưu HTML
-    required: true,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  updatedAt: { type: Date, default: Date.now },
-});
+  { timestamps: true }
+);
 
-module.exports = mongoose.model("File", FileSchema);
+module.exports = mongoose.model("File", fileSchema);

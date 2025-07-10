@@ -10,6 +10,7 @@ import {
   updateFile,
   deleteFile,
   downloadFile,
+  getAll,
 } from "../controllers/file.js";
 
 // Setup Multer
@@ -21,10 +22,7 @@ const storage = multer.diskStorage({
     }
     cb(null, uploadDir);
   },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  },
+  filename: (req, file, cb) => cb(null, file.originalname),
 });
 
 const upload = multer({ storage: storage });
@@ -32,7 +30,9 @@ const upload = multer({ storage: storage });
 router
   .route("/files/upload-multiple")
   .post(upload.array("files", 10), uploadFiles);
-// router.route("/files/:id").get(getDetailFile);
+router.route("/files").get(getAll);
+router.route("/file/:id").get(getDetailFile);
+
 // router.route("/files/:id").put(updateFile);
 // router.route("/files/:id").delete(deleteFile);
 // router.route("/files/download/:id").get(downloadFile);

@@ -43,7 +43,6 @@ exports.uploadFiles = catchAsyncErrors(async (req, res, next) => {
       files: savedFiles,
     });
   } catch (error) {
-    console.error("dsadsad");
     console.error(error);
     res.status(500).json({ message: "Server error", error });
   }
@@ -85,3 +84,110 @@ exports.uploadFiles = catchAsyncErrors(async (req, res, next) => {
 // exports.updateFile = catchAsyncErrors(async (req, res, next) => {});
 // exports.deleteFile = catchAsyncErrors(async (req, res, next) => {});
 // exports.downloadFile = catchAsyncErrors(async (req, res, next) => {});
+
+exports.getAll = catchAsyncErrors(async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1; // Trang hiện tại
+    const size = parseInt(req.query.size) || 10; // Số lượng mỗi trang
+    const filterName = req.query.filter || ""; // Lọc theo tên file
+    const typeId = req.query.type || ""; // Lọc theo loại án
+
+    const skip = (page - 1) * size;
+
+    // Xây dựng điều kiện lọc động
+    const query = {};
+    if (filterName) {
+      query.filename = { $regex: filterName, $options: "i" }; // Tìm gần đúng không phân biệt hoa thường
+    }
+    if (typeId) {
+      query.type = typeId; // Tìm chính xác theo ObjectId loại án
+    }
+
+    const [totalItems, files] = await Promise.all([
+      File.countDocuments(query),
+      File.find(query)
+        .populate("type") // Lấy đầy đủ thông tin loại án liên kết
+        .sort({ createdAt: -1 }) // Mới nhất trước
+        .skip(skip)
+        .limit(size),
+    ]);
+
+    res.status(200).json({
+      errCode: 0,
+      message: "Lấy danh sách files thành công",
+      data: files,
+      pagination: {
+        totalItems,
+        currentPage: page,
+        pageSize: size,
+        totalPages: Math.ceil(totalItems / size),
+      },
+    });
+  } catch (err) {
+    console.error("🚀 ~ GetAll Files API Error:", err);
+    res.status(500).json({
+      errCode: 1,
+      message: "Lấy danh sách files thất bại",
+    });
+  }
+});
+
+exports.getDetailFile = catchAsyncErrors(async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    if (!id) {
+      return res.status(400).json({
+        errCode: 3,
+        message: "Missing file ID",
+      });
+    }
+    const file = await File.findById(id);
+
+    if (!file) {
+      return res.status(404).json({
+        errCode: 1,
+        message: "File not found",
+      });
+    }
+
+    res.status(200).json({
+      errCode: 0,
+      message: "Get file succeed",
+      data: file,
+    });
+  } catch (err) {
+    console.log("🚀 ~ exports.getOne error:", err);
+    res.status(500).json({
+      errCode: 2,
+      message: "Get file failed",
+    });
+  }
+});
+
+exports.deleteOne = catchAsyncErrors(async (req, res, next) => {
+  const fileId = req.params.id;
+
+  try {
+    const file = await File.findById(fileId);
+
+    if (!file) {
+      return res.status(404).json({
+        errCode: 1,
+        message: "File not found",
+      });
+    }
+
+    await File.findByIdAndDelete(fileId);
+
+    res.status(200).json({
+      errCode: 0,
+      message: "Delete file succeed",
+    });
+  } catch (err) {
+    console.log("🚀 ~ exports.deleteOne error:", err);
+    res.status(500).json({
+      errCode: 2,
+      message: "Delete file failed",
+    });
+  }
+});
