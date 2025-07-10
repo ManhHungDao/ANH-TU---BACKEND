@@ -33,8 +33,7 @@ router
 router.route("/files").get(getAll);
 router.route("/file/:id").get(getDetailFile);
 router.route("/files/:id").delete(deleteFile);
-
-// router.route("/files/:id").put(updateFile);
+router.route("/file/edit/:id").put(updateFile);
 // router.route("/files/download/:id").get(downloadFile);
 
 module.exports = router;

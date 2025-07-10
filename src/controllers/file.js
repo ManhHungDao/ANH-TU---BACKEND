@@ -157,3 +157,68 @@ exports.deleteFile = catchAsyncErrors(async (req, res, next) => {
     });
   }
 });
+
+exports.updateFile = catchAsyncErrors(async (req, res, next) => {
+  try {
+    const { id, content } = req.body;
+
+    if (!id || !content) {
+      return res.status(400).json({
+        errCode: 1,
+        message: "Thiếu ID hoặc nội dung file",
+      });
+    }
+
+    const file = await File.findById(id);
+    if (!file) {
+      return res.status(404).json({
+        errCode: 2,
+        message: "Không tìm thấy file",
+      });
+    }
+
+    file.content = content;
+    await file.save();
+
+    res.status(200).json({
+      errCode: 0,
+      message: "Cập nhật nội dung file thành công",
+      data: file,
+    });
+  } catch (error) {
+    console.error("🚀 ~ updateFile error:", error);
+    res.status(500).json({
+      errCode: 3,
+      message: "Cập nhật thất bại",
+    });
+  }
+});
+
+exports.downloadFile = catchAsyncErrors(async (req, res, next) => {
+  try {
+    const fileId = req.params.id;
+    if (!fileId) {
+      return res.status(400).json({ message: "File ID is required" });
+    }
+
+    const file = await File.findById(fileId);
+    if (!file) {
+      return res.status(404).json({ message: "File not found" });
+    }
+
+    const filePath = path.join(__dirname, "../uploads", file.filename);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: "File does not exist on server" });
+    }
+
+    res.download(filePath, file.filename, (err) => {
+      if (err) {
+        console.error("Download error:", err);
+        res.status(500).json({ message: "Error downloading file" });
+      }
+    });
+  } catch (error) {
+    console.error("Download error:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
+});
