@@ -3,6 +3,7 @@ const app = express();
 const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
 const file = require("./route/file");
+const type = require("./route/type");
 const path = require("path");
 const multer = require("multer");
 const fs = require("fs");
@@ -42,6 +43,7 @@ const storage = multer.diskStorage({
 });
 
 app.use("/api", file);
+app.use("/api", type);
 
 const upload = multer({ storage });
 //Middleware error handler

@@ -10,11 +10,13 @@ import File from "../models/file.js";
 exports.uploadFiles = catchAsyncErrors(async (req, res, next) => {
   try {
     let files = req.files;
+    let type = req.body.type;
     if (!files || files.length === 0) {
-      console.log("🚀 ~ exports.uploadFiles=catchAsyncErrors ~ error:", error);
-      return res.status(400).json({ message: "No files uploaded dsds" });
+      return res.status(400).json({ message: "No files uploaded" });
     }
-
+    if (!type) {
+      return res.status(400).json({ message: "No type uploaded" });
+    }
     // Nếu chỉ có 1 file, Multer vẫn trả về mảng có 1 phần tử → không cần phân biệt
     const savedFiles = [];
 
@@ -29,6 +31,7 @@ exports.uploadFiles = catchAsyncErrors(async (req, res, next) => {
       const newFile = new File({
         filename: file.originalname,
         content: html,
+        type,
       });
 
       const savedFile = await newFile.save();
@@ -47,43 +50,6 @@ exports.uploadFiles = catchAsyncErrors(async (req, res, next) => {
     res.status(500).json({ message: "Server error", error });
   }
 });
-
-//   const files = req.files;
-
-//   if (!files || files.length === 0) {
-//     return res
-//       .status(400)
-//       .json({ success: false, message: "Không có file nào được tải lên." });
-//   }
-
-//   const savedFiles = [];
-
-//   for (const file of files) {
-//     // const filePath = path.join(__dirname, "../uploads", file.filename);
-
-//     // Đọc và chuyển đổi file .docx sang HTML
-//     const result = await mammoth.convertToHtml({ path: file.path });
-//     const htmlContent = result.value;
-
-//     // Lưu vào MongoDB
-//     const savedFile = await File.create({
-//       filename: file.originalname,
-//       content: htmlContent,
-//     });
-
-//     savedFiles.push(savedFile);
-//   }
-
-//   res.status(200).json({
-//     success: true,
-//     message: "Đã lưu thành công tất cả file",
-//     files: savedFiles,
-//   });
-// });
-// exports.getDetailFile = catchAsyncErrors(async (req, res, next) => {});
-// exports.updateFile = catchAsyncErrors(async (req, res, next) => {});
-// exports.deleteFile = catchAsyncErrors(async (req, res, next) => {});
-// exports.downloadFile = catchAsyncErrors(async (req, res, next) => {});
 
 exports.getAll = catchAsyncErrors(async (req, res, next) => {
   try {
@@ -164,8 +130,9 @@ exports.getDetailFile = catchAsyncErrors(async (req, res, next) => {
   }
 });
 
-exports.deleteOne = catchAsyncErrors(async (req, res, next) => {
+exports.deleteFile = catchAsyncErrors(async (req, res, next) => {
   const fileId = req.params.id;
+  console.log("🚀 ~ exports.deleteOne ~ fileId:", fileId);
 
   try {
     const file = await File.findById(fileId);
@@ -184,7 +151,6 @@ exports.deleteOne = catchAsyncErrors(async (req, res, next) => {
       message: "Delete file succeed",
     });
   } catch (err) {
-    console.log("🚀 ~ exports.deleteOne error:", err);
     res.status(500).json({
       errCode: 2,
       message: "Delete file failed",
