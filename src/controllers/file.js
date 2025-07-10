@@ -1,11 +1,7 @@
-const multer = require("multer");
 const mammoth = require("mammoth");
-const fs = require("fs");
-const path = require("path");
-const FileModel = require("../models/file");
-import ErrorHandler from "../utils/errorHandler";
 import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
 import File from "../models/file.js";
+const htmlToDocx = require("html-to-docx");
 
 exports.uploadFiles = catchAsyncErrors(async (req, res, next) => {
   try {
@@ -196,29 +192,46 @@ exports.updateFile = catchAsyncErrors(async (req, res, next) => {
 
 exports.downloadFile = catchAsyncErrors(async (req, res, next) => {
   try {
-    const fileId = req.params.id;
-    if (!fileId) {
-      return res.status(400).json({ message: "File ID is required" });
-    }
+    const id = req.params.id;
+    const file = await File.findById(id);
 
-    const file = await File.findById(fileId);
     if (!file) {
-      return res.status(404).json({ message: "File not found" });
+      return res.status(404).json({
+        errCode: 1,
+        message: "Không tìm thấy file",
+      });
     }
 
-    const filePath = path.join(__dirname, "../uploads", file.filename);
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ message: "File does not exist on server" });
-    }
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>${file.filename}</title>
+      </head>
+      <body>
+        ${file.content || "<p>Không có nội dung</p>"}
+      </body>
+      </html>
+    `;
 
-    res.download(filePath, file.filename, (err) => {
-      if (err) {
-        console.error("Download error:", err);
-        res.status(500).json({ message: "Error downloading file" });
-      }
-    });
+    // 👉 Chuyển HTML sang DOCX Buffer (CHUẨN NODEJS)
+    const docxBuffer = await htmlToDocx(htmlContent);
+
+    const filename = `${file.filename || "download"}.docx`;
+
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    );
+
+    res.end(docxBuffer);
   } catch (error) {
-    console.error("Download error:", error);
-    res.status(500).json({ message: "Server error", error });
+    console.error("❌ Lỗi khi export DOCX:", error);
+    res.status(500).json({
+      errCode: 2,
+      message: "Xuất file thất bại",
+    });
   }
 });
