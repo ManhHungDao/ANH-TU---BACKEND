@@ -3,34 +3,49 @@ const app = express();
 const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
 const path = require("path");
-const multer = require("multer");
 const fs = require("fs");
-const menuRoutes = require("./route/menuRoutes");
-const stepRoutes = require("./route/stepRoutes");
+const dotenv = require("dotenv");
+const cors = require("cors");
 
-require("dotenv").config();
+// Load environment variables
+dotenv.config();
 
-const ErrorMiddleware = require("./middlewares/errors");
+// Connect to MongoDB: done in server.js via connectDatabase()
 
-app.use(bodyParser.json({ limit: "50mb" }));
-app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
+// Middlewares
+const allowedOrigin = (
+  process.env.FRONTEND_URL || "http://localhost:3000"
+).replace(/\/$/, "");
+
+app.use(
+  cors({
+    origin: allowedOrigin,
+    credentials: true,
+  })
+);
+
 app.use(express.json());
+app.use(bodyParser.json({ limit: "50mb" }));
+app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
 app.use(cookieParser());
 
+// Upload directory setup
 const UPLOAD_DIR = path.join(__dirname, "uploads");
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR);
 
-// Cấu hình Multer cho nhiều file
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
-  filename: (req, file, cb) => cb(null, file.originalname),
-});
+// Static file serving
+app.use("/uploads", express.static(UPLOAD_DIR));
 
+// Route imports
+const menuRoutes = require("./route/menuRoutes");
+const stepRoutes = require("./route/stepRoutes");
+
+// Use routes
 app.use("/api/menus", menuRoutes);
 app.use("/api/steps", stepRoutes);
 
-const upload = multer({ storage });
-//Middleware error handler
+// Error handling middleware
+const ErrorMiddleware = require("./middlewares/errors");
 app.use(ErrorMiddleware);
 
 module.exports = app;
