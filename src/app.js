@@ -41,7 +41,7 @@ const menuRoutes = require("./route/menuRoutes");
 const stepRoutes = require("./route/stepRoutes");
 
 // Use routes
-app.use("/api/menus", menuRoutes);
+app.use("/api/menu-items", menuRoutes);
 app.use("/api/steps", stepRoutes);
 
 // Error handling middleware
