@@ -2,7 +2,8 @@
 const Menu = require("../models/Menu");
 const fs = require("fs");
 const path = require("path");
-
+import mongoose from "mongoose";
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 // Helper function for error handling
 const handleError = (res, error, message = "Something went wrong") => {
   console.error(error);
@@ -47,9 +48,15 @@ const getMenuById = async (req, res) => {
 };
 
 const updateMenu = async (req, res) => {
+  const { menuId } = req.params;
+
+  if (!isValidObjectId(menuId)) {
+    return res.status(400).json({ success: false, error: "Invalid menu ID" });
+  }
+
   try {
     const updatedMenu = await Menu.findByIdAndUpdate(
-      req.params.menuId,
+      menuId,
       { name: req.body.name },
       { new: true }
     );
@@ -96,12 +103,20 @@ const addLevel2 = async (req, res) => {
 };
 
 const updateLevel2 = async (req, res) => {
+  const { menuId, level2Id } = req.params;
+
+  if (!isValidObjectId(menuId) || !isValidObjectId(level2Id)) {
+    return res
+      .status(400)
+      .json({ success: false, error: "Invalid menu or level2 ID" });
+  }
+
   try {
-    const menu = await Menu.findById(req.params.menuId);
+    const menu = await Menu.findById(menuId);
     if (!menu)
       return res.status(404).json({ success: false, error: "Menu not found" });
 
-    const level2 = menu.children.id(req.params.level2Id);
+    const level2 = menu.children.id(level2Id);
     if (!level2)
       return res
         .status(404)
@@ -294,18 +309,48 @@ const updateStep = async (req, res) => {
 };
 
 // Utility function to find step in hierarchy
+// const findStepInHierarchy = async (stepId) => {
+//   const menu = await Menu.findOne({ "children.children.steps._id": stepId });
+//   if (!menu) return null;
+
+//   for (const level2 of menu.children) {
+//     for (const level3 of level2.children) {
+//       const step = level3.steps.id(stepId);
+//       if (step) return step;
+//     }
+//   }
+//   return null;
+// };
 const findStepInHierarchy = async (stepId) => {
-  const menu = await Menu.findOne({ "children.children.steps._id": stepId });
+  const menu = await Menu.findOne({
+    $or: [
+      { "steps._id": stepId },
+      { "children.steps._id": stepId },
+      { "children.children.steps._id": stepId },
+    ],
+  });
+
   if (!menu) return null;
 
+  // Check level 1
+  const step1 = menu.steps.id(stepId);
+  if (step1) return step1;
+
+  // Check level 2
   for (const level2 of menu.children) {
+    const step2 = level2.steps.id(stepId);
+    if (step2) return step2;
+
+    // Check level 3
     for (const level3 of level2.children) {
-      const step = level3.steps.id(stepId);
-      if (step) return step;
+      const step3 = level3.steps.id(stepId);
+      if (step3) return step3;
     }
   }
+
   return null;
 };
+
 const deleteFile = async (req, res) => {
   try {
     const step = await findStepInHierarchy(req.params.stepId);
@@ -335,35 +380,108 @@ const deleteFile = async (req, res) => {
   }
 };
 
+// const deleteStep = async (req, res) => {
+//   try {
+//     const step = await findStepInHierarchy(req.params.stepId);
+//     if (!step)
+//       return res.status(404).json({ success: false, error: "Step not found" });
+
+//     // Xóa file từ hệ thống nếu cần
+//     if (step.files) {
+//       step.files.forEach((file) => fs.unlinkSync(file.path)); // Xóa tất cả file liên quan
+//     }
+
+//     // Xóa step khỏi cấu trúc menu
+//     const menu = await Menu.findOne({
+//       "children.children.steps._id": req.params.stepId,
+//     });
+//     if (!menu)
+//       return res.status(404).json({ success: false, error: "Menu not found" });
+
+//     for (const level2 of menu.children) {
+//       for (const level3 of level2.children) {
+//         const stepIndex = level3.steps.findIndex(
+//           (s) => s._id.toString() === req.params.stepId
+//         );
+//         if (stepIndex !== -1) {
+//           level3.steps.splice(stepIndex, 1); // Xóa step khỏi level3
+//           await menu.save();
+//           return res.json({
+//             success: true,
+//             message: "Step deleted successfully",
+//           });
+//         }
+//       }
+//     }
+
+//     return res
+//       .status(404)
+//       .json({ success: false, error: "Step not found in menu structure" });
+//   } catch (error) {
+//     handleError(res, error, "Failed to delete step");
+//   }
+// };
 const deleteStep = async (req, res) => {
   try {
-    const step = await findStepInHierarchy(req.params.stepId);
-    if (!step)
-      return res.status(404).json({ success: false, error: "Step not found" });
+    const { stepId } = req.params;
 
-    // Xóa file từ hệ thống nếu cần
-    if (step.files) {
-      step.files.forEach((file) => fs.unlinkSync(file.path)); // Xóa tất cả file liên quan
+    const menu = await Menu.findOne({
+      $or: [
+        { "steps._id": stepId },
+        { "children.steps._id": stepId },
+        { "children.children.steps._id": stepId },
+      ],
+    });
+
+    if (!menu) {
+      return res.status(404).json({ success: false, error: "Menu not found" });
     }
 
-    // Xóa step khỏi cấu trúc menu
-    const menu = await Menu.findOne({
-      "children.children.steps._id": req.params.stepId,
-    });
-    if (!menu)
-      return res.status(404).json({ success: false, error: "Menu not found" });
+    // Level 1
+    const stepIndex1 = menu.steps.findIndex((s) => s._id.toString() === stepId);
+    if (stepIndex1 !== -1) {
+      const step = menu.steps[stepIndex1];
+      step.files?.forEach(
+        (file) => fs.existsSync(file.path) && fs.unlinkSync(file.path)
+      );
+      menu.steps.splice(stepIndex1, 1);
+      await menu.save();
+      return res.json({ success: true, message: "Step deleted from level 1" });
+    }
 
+    // Level 2
     for (const level2 of menu.children) {
-      for (const level3 of level2.children) {
-        const stepIndex = level3.steps.findIndex(
-          (s) => s._id.toString() === req.params.stepId
+      const stepIndex2 = level2.steps.findIndex(
+        (s) => s._id.toString() === stepId
+      );
+      if (stepIndex2 !== -1) {
+        const step = level2.steps[stepIndex2];
+        step.files?.forEach(
+          (file) => fs.existsSync(file.path) && fs.unlinkSync(file.path)
         );
-        if (stepIndex !== -1) {
-          level3.steps.splice(stepIndex, 1); // Xóa step khỏi level3
+        level2.steps.splice(stepIndex2, 1);
+        await menu.save();
+        return res.json({
+          success: true,
+          message: "Step deleted from level 2",
+        });
+      }
+
+      // Level 3
+      for (const level3 of level2.children) {
+        const stepIndex3 = level3.steps.findIndex(
+          (s) => s._id.toString() === stepId
+        );
+        if (stepIndex3 !== -1) {
+          const step = level3.steps[stepIndex3];
+          step.files?.forEach(
+            (file) => fs.existsSync(file.path) && fs.unlinkSync(file.path)
+          );
+          level3.steps.splice(stepIndex3, 1);
           await menu.save();
           return res.json({
             success: true,
-            message: "Step deleted successfully",
+            message: "Step deleted from level 3",
           });
         }
       }
@@ -371,7 +489,7 @@ const deleteStep = async (req, res) => {
 
     return res
       .status(404)
-      .json({ success: false, error: "Step not found in menu structure" });
+      .json({ success: false, error: "Step not found in any level" });
   } catch (error) {
     handleError(res, error, "Failed to delete step");
   }
