@@ -6,6 +6,8 @@ const router = express.Router();
 const storage = multer.memoryStorage(); // lưu file dưới dạng buffer
 const upload = multer({ storage });
 
+router.put("/reorder", stepController.reorderSteps);
+
 router.get("/", stepController.getAllSteps);
 router.get("/:id", stepController.getStepById);
 
@@ -34,3 +36,4 @@ router.get(
   "/:stepId/attachments/:attachmentId",
   stepController.getAttachmentFile
 );
+// thay đổi thứ tự

@@ -365,3 +365,30 @@ exports.getAttachmentFile = async (req, res) => {
     res.status(500).json({ error: "Không thể tải file." });
   }
 };
+
+// thay đổi thứ tự step
+exports.reorderSteps = async (req, res) => {
+  try {
+    const { menuId, orderedStepIds } = req.body;
+
+    if (!menuId || !Array.isArray(orderedStepIds)) {
+      return res
+        .status(400)
+        .json({ error: "menuId and orderedStepIds are required." });
+    }
+
+    const bulkOps = orderedStepIds.map((stepId, index) => ({
+      updateOne: {
+        filter: { _id: stepId, menu: menuId },
+        update: { order: index },
+      },
+    }));
+
+    await Step.bulkWrite(bulkOps);
+
+    res.json({ message: "Steps reordered successfully" });
+  } catch (err) {
+    console.error("Reorder error:", err);
+    res.status(500).json({ error: "Failed to reorder steps" });
+  }
+};
