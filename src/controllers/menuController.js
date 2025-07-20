@@ -12,7 +12,7 @@ exports.getMenus = async (req, res) => {
       filter.parent = req.query.parent;
     }
 
-    const menus = await Menu.find(filter).sort("order");
+    const menus = await Menu.find(filter).sort("name");
     res.json(menus);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -165,18 +165,30 @@ exports.updateMenuTitle = async (req, res) => {
   }
 };
 
-// DELETE menu (and optionally its submenus/steps)
 exports.deleteMenu = async (req, res) => {
   try {
     const menuId = req.params.id;
 
-    // Xoá tất cả step liên quan
-    await Step.deleteMany({ menu: menuId });
+    // Hàm đệ quy để xoá menu con và steps
+    const deleteMenuRecursive = async (id) => {
+      // Xoá steps của menu hiện tại
+      await Step.deleteMany({ menu: id });
 
-    // Xoá menu con đệ quy nếu cần (hoặc tuỳ yêu cầu)
-    await Menu.deleteOne({ _id: menuId });
+      // Tìm menu con
+      const children = await Menu.find({ parent: id });
 
-    res.json({ message: "Menu deleted successfully" });
+      // Xoá đệ quy menu con
+      for (const child of children) {
+        await deleteMenuRecursive(child._id);
+      }
+
+      // Xoá menu hiện tại
+      await Menu.deleteOne({ _id: id });
+    };
+
+    await deleteMenuRecursive(menuId);
+
+    res.json({ message: "Menu and all related submenus and steps deleted." });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
