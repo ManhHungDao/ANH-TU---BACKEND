@@ -1,11 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const stepCtrl = require("../controllers/stepController");
+const stepController = require("../controllers/stepController");
 
-router.get("/", stepCtrl.getStepsByInfoBoard);
-router.get("/:id", stepCtrl.getStepById);
-router.post("/", stepCtrl.createStep);
-router.put("/:id", stepCtrl.updateStep);
-router.delete("/:id", stepCtrl.deleteStep);
+router.get("/", stepController.getAllSteps); // ?menu=menuId để lọc
+router.get("/:id", stepController.getStepById);
+router.post("/", stepController.createStep);
+router.put("/:id", stepController.updateStep);
+router.delete("/:id", stepController.deleteStep);
 
 module.exports = router;

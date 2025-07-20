@@ -1,18 +1,17 @@
-// models/Step.js
 const mongoose = require("mongoose");
+const attachmentSchema = new mongoose.Schema({
+  filename: String,
+  mimetype: String,
+  size: Number,
+  data: Buffer, // lưu file binary
+});
 
-const StepSchema = new mongoose.Schema(
-  {
-    infoBoard: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "InfoBoard",
-      required: true,
-    },
-    title: { type: String, required: true },
-    description: { type: String },
-    order: { type: Number, required: true },
-  },
-  { timestamps: true }
-);
+const stepSchema = new mongoose.Schema({
+  menu: { type: mongoose.Schema.Types.ObjectId, ref: "Menu", required: true },
+  title: { type: String, required: true },
+  content: { type: String, default: "" },
+  order: { type: Number, default: 0 },
+  attachments: [attachmentSchema], // danh sách file đính kèm dạng buffer
+});
 
-module.exports = mongoose.model("Step", StepSchema);
+const Step = mongoose.model("Step", stepSchema);

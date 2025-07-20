@@ -1,11 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const menuCtrl = require("../controllers/menuController");
+const menuController = require("../controllers/menuController");
 
-router.get("/", menuCtrl.getAllMenus);
-router.get("/:id", menuCtrl.getMenuById);
-router.post("/", menuCtrl.createMenu);
-router.put("/:id", menuCtrl.updateMenu);
-router.delete("/:id", menuCtrl.deleteMenu);
+router.get("/", menuController.getAllMenus);
+router.get("/:id", menuController.getMenuById);
+router.post("/", menuController.createMenu);
+router.put("/:id", menuController.updateMenu);
+router.delete("/:id", menuController.deleteMenu);
 
 module.exports = router;
