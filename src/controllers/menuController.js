@@ -1,19 +1,19 @@
 const Menu = require("../models/Menu");
 const Step = require("../models/Step");
 
-// GET all menus (optionally nested tree + steps)
-exports.getAllMenus = async (req, res) => {
+// GET all menu level 1
+exports.getMenus = async (req, res) => {
   try {
-    const menus = await Menu.find().sort({ order: 1 });
+    const filter = {};
 
-    const menuWithSteps = await Promise.all(
-      menus.map(async (menu) => {
-        const steps = await Step.find({ menu: menu._id }).sort({ order: 1 });
-        return { ...menu.toObject(), steps };
-      })
-    );
+    if (req.query.parent === "null") {
+      filter.parent = null;
+    } else if (req.query.parent) {
+      filter.parent = req.query.parent;
+    }
 
-    res.json(menuWithSteps);
+    const menus = await Menu.find(filter).sort("order");
+    res.json(menus);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -33,14 +33,54 @@ exports.getMenuById = async (req, res) => {
   }
 };
 
-// CREATE new menu
 exports.createMenu = async (req, res) => {
   try {
-    const { title, parent, order } = req.body;
-    const newMenu = new Menu({ title, parent: parent || null, order });
+    const { title, parent } = req.body;
+
+    // Kiểm tra trống
+    if (!title || !title.trim()) {
+      return res.status(400).json({ error: "Tên menu không được để trống." });
+    }
+
+    const cleanTitle = title.trim();
+
+    // Kiểm tra ký tự đặc biệt
+    const invalidCharRegex = /[^a-zA-Z0-9 _-]/;
+    if (invalidCharRegex.test(cleanTitle)) {
+      return res.status(400).json({
+        error:
+          "Tên menu không được chứa ký tự đặc biệt. Chỉ cho phép chữ, số, khoảng trắng, -, _",
+      });
+    }
+
+    // Kiểm tra trùng tên trong cùng một parent
+    const existing = await Menu.findOne({
+      title: cleanTitle,
+      parent: parent || null,
+    });
+    if (existing) {
+      return res
+        .status(400)
+        .json({ error: "Tên menu đã tồn tại trong cùng cấp." });
+    }
+
+    // Lấy order lớn nhất trong cùng parent
+    const maxOrderMenu = await Menu.findOne({ parent: parent || null })
+      .sort("-order")
+      .select("order");
+
+    const nextOrder = maxOrderMenu ? maxOrderMenu.order + 1 : 1;
+
+    const newMenu = new Menu({
+      title: cleanTitle,
+      parent: parent || null,
+      order: nextOrder,
+    });
+
     await newMenu.save();
     res.status(201).json(newMenu);
   } catch (err) {
+    console.error("Lỗi tạo menu:", err);
     res.status(400).json({ error: err.message });
   }
 };
