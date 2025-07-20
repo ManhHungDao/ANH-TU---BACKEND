@@ -1,11 +1,17 @@
 const express = require("express");
-const router = express.Router();
+const multer = require("multer");
 const stepController = require("../controllers/stepController");
 
-router.get("/", stepController.getAllSteps); // ?menu=menuId để lọc
+const router = express.Router();
+const upload = multer(); // lưu vào memory (RAM)
+
+router.get("/", stepController.getAllSteps);
 router.get("/:id", stepController.getStepById);
-router.post("/", stepController.createStep);
-router.put("/:id", stepController.updateStep);
+
+// multipart/form-data (field: files[])
+router.post("/", upload.array("files"), stepController.createStep);
+router.put("/:id", upload.array("files"), stepController.updateStep);
+
 router.delete("/:id", stepController.deleteStep);
 
 module.exports = router;
