@@ -14,4 +14,4 @@ const stepSchema = new mongoose.Schema({
   attachments: [attachmentSchema], // danh sách file đính kèm dạng buffer
 });
 
-const Step = mongoose.model("Step", stepSchema);
+module.exports = mongoose.model("Step", stepSchema);
